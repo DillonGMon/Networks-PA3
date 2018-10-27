@@ -38,13 +38,37 @@ class Link:
         if pkt_S is None:
             return #return if no packet to transfer
         if len(pkt_S) > self.out_intf.mtu:
+            pkt_H=pkt_S[:5]
+            print(pkt_H)
+            pkt_S=pkt_S[5:len(pkt_S)]
+            print(pkt_S)
+            while((len(pkt_S)+5) > self.out_intf.mtu):
+                temp = pkt_S[:(self.out_intf.mtu-5)]
+                temp = pkt_H + temp
+                print(temp)
+                try:
+                    self.out_intf.put(temp)
+                    print('%s: transmitting packet "%s"' % (self, temp))
+                except queue.Full:
+                    print('%s: packet lost' % (self))
+                    pass
+                pkt_S = pkt_S[(self.out_intf.mtu-5):len(pkt_S)]
+            if(len(pkt_S) is not 0):
+                pkt_S=pkt_H + pkt_S
+                try:
+                    self.out_intf.put(pkt_S)
+                    print('%s: transmitting packet "%s"' % (self, pkt_S))
+                except queue.Full:
+                    print('%s: packet lost' % (self))
+                    pass
+            return
 
 
 #TO DO: break packets up here to a certain size
 
 
-            print('%s: packet "%s" length greater then link mtu (%d)' % (self, pkt_S, self.out_intf.mtu))
-            return #return without transmitting if packet too big
+            #print('%s: packet "%s" length greater then link mtu (%d)' % (self, pkt_S, self.out_intf.mtu))
+            #return #return without transmitting if packet too big
         #otherwise transmit the packet
         try:
             self.out_intf.put(pkt_S)
